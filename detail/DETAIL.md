@@ -1,0 +1,85 @@
+# Xiaoyunque
+
+Xiaoyunque (小云雀, XYQ, Pippit) generates images and videos from a prompt. The
+official `pippit-tool-cli` already does the work; this plugin puts it under one
+roof inside DeepSeek Harness, so an agent can generate media and a person can
+see what happened.
+
+## What it adds
+
+- A sidebar panel, **小云雀**, beside the other panel rows, plus a page under
+  Settings. Both show the same thing: whether the CLI is installed, whether you
+  are signed in, how many credits remain, the model catalogue for images and
+  videos, and the runs started from this harness.
+- A quiet status pill below the composer with the signed-in state and credit
+  balance, so you notice an expired sign-in before a generation fails.
+- Six agent tools: `xyq_status`, `xyq_models`, `xyq_generate_image`,
+  `xyq_generate_video`, `xyq_result`, `xyq_upload`.
+
+Three seats, one page. The sidebar row is the dependable door, because the
+sidebar foot that hosts the Settings seat is not drawn in every shell; each seat
+is registered through `slots.inject`, so an absent one costs that entry and
+nothing else.
+
+## The CLI is the engine
+
+Every operation shells out to `pippit-tool-cli` and reads its JSON. Nothing here
+reimplements the HTTP API, so a CLI upgrade upgrades the plugin's reach. The
+plugin looks for the binary in this order:
+
+1. `cliPath` from the plugin config, when set.
+2. `bin/pippit-tool-cli.exe` inside an installed `@pippit-dev/cli` package, found
+   by walking `PATH`, the directory around the running Node executable, the npm
+   global directory, and the profile's own `node_modules`.
+3. `scripts/run.js` of that package, launched with the current Node executable.
+
+Install the CLI with `npx @pippit-dev/cli@latest install` and sign in with
+`pippit-tool-cli login`. The panel repeats both hints when it finds something
+missing.
+
+## Generation returns a handle, not a file
+
+`generate-image` and `generate-video` submit a run and return a thread id, a run
+id, and a web link. The media arrives later. Ask for it with `xyq_result`, which
+calls `query-result` and, by default, downloads into the plugin's download
+directory. Each run is recorded in `runs.json` next to the plugin state, so the
+panel can list recent work even after a restart, and `xyq_result` can resume a
+run by id alone.
+
+## Reloading
+
+Disabling and re-enabling the plugin is enough to load a changed `lib/*.js`; no
+restart. That sounds like a detail, but it forced one design decision. The host
+web server keeps the route object it accepted and throws on a second
+registration for the same `(kind, path)` — the throwing registration is the
+reloaded one, so the object that stays behind closes over the *older* module
+copy. The panel then shows the previous journal and an empty model list while
+the tools, served by the new fiber, are correct.
+
+So each route installs a trampoline that looks up the newest handler in a
+`Symbol.for` table on `globalThis`, which the reloaded copy overwrites. The run
+journal also re-reads its file before every read (a second instance may have
+advanced it), and the model cache refuses to store an empty or failed result, so
+a transient failure cannot look like a missing catalogue for five minutes.
+
+One consequence worth stating plainly: the trampoline only helps once a copy of
+it is actually holding the route. A process that started before this code
+existed keeps serving the handler it registered then, and no reload can reach
+it — that first load needs a harness restart. After that, reloads take effect.
+
+## Configuration
+
+| Key | Meaning |
+| --- | --- |
+| `cliPath` | Explicit path to the CLI. Empty means auto-discover. |
+| `cwd` | Working directory for CLI calls. The CLI reads `config.toml` from its current directory, so this is how you point it at a PPE environment. |
+| `downloadDir` | Where `query-result` saves media. Empty means `<DSH home>/xyq/downloads`. |
+| `teamId` | Team space id. Empty means the CLI's own default; `0` means the personal space. |
+| `stateTtlMs` | How long a state snapshot is reused before the next CLI call. |
+
+## Credentials
+
+Sign-in uses the CLI's browser loopback flow. The plugin never reads, stores, or
+prints the access key. `XYQ_ACCESS_KEY` in the environment still wins over a
+browser login, which is why signing out here clears the local credential but
+cannot clear an environment variable the CLI inherited.

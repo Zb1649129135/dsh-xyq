@@ -1,0 +1,21 @@
+# dsh-xyq — Xiaoyunque (XYQ / Pippit) toolbox.
+#
+# One row only: the plugin itself. It owns no companion services, so nothing
+# here can outlive it or hold the boot sequence open.
+- insert:
+    - id: dsh-xyq
+      name: dsh-xyq
+      config:
+        # Empty means "discover pippit-tool-cli automatically" (PATH, then the
+        # npm global root that ships the native binary).
+        cliPath: ''
+        # Working directory the CLI runs in. The CLI reads ./config.toml for
+        # xyq_api_url / x-tt-env, so point this at the directory holding it.
+        cwd: ''
+        # Where generated media and query-result downloads land. Empty resolves
+        # to <DSH home>/xyq/downloads.
+        downloadDir: ''
+        # Space override passed as --team-id. Empty keeps the CLI default.
+        teamId: ''
+        # How long the Host caches one CLI status snapshot for the UI.
+        stateTtlMs: 6000

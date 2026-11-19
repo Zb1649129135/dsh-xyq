@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "小云雀",
+    "description": "小云雀（XYQ / Pippit）工具箱：登录态、积分、空间、图片与视频生成、素材上传与结果交付，底层驱动 pippit-tool-cli。",
+    "detail": "detail/DETAIL.zh.md"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Xiaoyunque",
+    "description": "Xiaoyunque (XYQ / Pippit) toolbox: login state, credits, spaces, image and video generation, upload and result delivery, driven by pippit-tool-cli.",
+    "detail": "detail/DETAIL.md"
+  }
+}
