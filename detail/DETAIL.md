@@ -65,7 +65,15 @@ a transient failure cannot look like a missing catalogue for five minutes.
 One consequence worth stating plainly: the trampoline only helps once a copy of
 it is actually holding the route. A process that started before this code
 existed keeps serving the handler it registered then, and no reload can reach
-it — that first load needs a harness restart. After that, reloads take effect.
+it — because the web server never releases an accepted route either.
+
+That is why the path is tagged (`/dsh-xyq/v2/state`, `/dsh-xyq/v2/action`). A
+path that was never registered is always free, so a bump registers cleanly even
+in a harness that has been running for hours, and the new copy starts serving
+immediately without a restart. The tag lives in two files because the host and
+client halves ship as separate bundles that cannot import each other; keep them
+equal by hand. Bump it only for a change the old path cannot absorb on its own —
+ordinary logic changes ride the trampoline.
 
 ## Configuration
 

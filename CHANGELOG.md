@@ -15,10 +15,18 @@ First working version.
   panel snapshot.
 - Six tools: `xyq_status`, `xyq_models`, `xyq_generate_image`,
   `xyq_generate_video`, `xyq_result`, `xyq_upload`.
-- Two web routes: `GET /dsh-xyq/state` and `POST /dsh-xyq/action`, both
+- Two web routes: `GET /dsh-xyq/v2/state` and `POST /dsh-xyq/v2/action`, both
   rejected with 401 unless the request carries an authenticated harness
   session cookie. The state route exposes the account, the credit balance, and
   recent prompts, so it is not a public read either.
+- The route path carries a tag (`ROUTE_TAG` in `lib/index.js`, mirrored by hand
+  in `lib/client.js` because the two halves are separate bundles). The web
+  server never releases a route it accepted, so a process that started before
+  the trampoline existed could not be moved to the new code by any reload: the
+  old `/dsh-xyq/state` stayed bound to the old handler. A path that was never
+  registered is always free, so bumping the tag is the one way to reach an
+  already-running harness. Bump it only for a change the old path cannot absorb
+  on its own; ordinary logic changes ride the trampoline.
 - Run journal in `<DSH home>/xyq/runs.json`, capped at 60 entries, so a run
   survives a restart and can be resumed by id. The journal is re-read when the
   file changed under it, because a second instance may have advanced it.

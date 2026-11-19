@@ -71,3 +71,9 @@ change needs no rebuild.
   surviving route objects read the newest handler through a table on
   `globalThis`, because the web server refuses a second registration for the
   same path.
+- That trampoline only helps once a copy of it is holding the route. A harness
+  started before it existed keeps serving the handler it registered then, and no
+  reload can reach it — so the path is tagged (`/dsh-xyq/v2/…`). A path that was
+  never registered is always free, which is what makes the tag work on an
+  already-running harness. Bump it only for a change the old path cannot absorb;
+  ordinary changes ride the trampoline.
