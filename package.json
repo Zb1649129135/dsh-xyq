@@ -16,6 +16,7 @@
     "lib",
     "locale",
     "detail",
+    "assets",
     "cordis.patch.yml",
     "icon.svg",
     "README.md",

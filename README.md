@@ -50,6 +50,7 @@ dsh-xyq/
   lib/client.js   sidebar panel, settings page, composer pill (web half)
   locale/         en.json, zh.json — plugin manager metadata
   detail/         the long description shown on the plugin page
+  assets/pay/     WeChat Pay and Alipay QR codes
 ```
 
 ## Configuration
@@ -77,3 +78,31 @@ change needs no rebuild.
   never registered is always free, which is what makes the tag work on an
   already-running harness. Bump it only for a change the old path cannot absorb;
   ordinary changes ride the trampoline.
+
+## Buy the author a coffee
+
+This plugin was built in the gaps between other things — evenings, weekends, the
+odd half hour before a meeting. Plenty of it was not fun: `pippit-tool-cli` will
+append a notice line to its stdout at any moment, so the JSON has to be fished
+back out of the noise; the harness web server refuses a second registration for
+the same path, so the routes ride a trampoline table on `globalThis`; and the
+sidebar panel has to serve three client seats at once, none of which may be
+allowed to stop the plugin from booting. There was no budget and no deadline
+behind any of it. Only the fact that I wanted to use it myself.
+
+So it is free, has no ads, and collects nothing. The code is all here to read
+and change. If it genuinely saved you a few hours — or you would simply rather
+it did not quietly stop being maintained one day — scan one of the codes below.
+Any amount is fine; a one-yuan instant coffee wakes me up just as well as a
+thirty-yuan pour-over.
+
+| WeChat Pay | Alipay |
+| :---: | :---: |
+| <img src="assets/pay/wechat.png" alt="WeChat Pay QR code" width="220"> | <img src="assets/pay/alipay.png" alt="Alipay QR code" width="220"> |
+
+No need to scan anything, though. Filing an issue that says exactly where you
+got stuck, pointing out a vague sentence in the docs, or just passing the plugin
+on to someone who might use it — those help more than money does, and they make
+it better.
+
+Thanks for reading this far, and for spending your time here.
