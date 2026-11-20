@@ -5,13 +5,38 @@ A DeepSeek Harness plugin for Xiaoyunque (小云雀 / XYQ / Pippit). It surfaces
 and credits, a status pill under the composer, and six agent tools that
 generate images and videos, upload source files, and fetch results.
 
+## Install
+
+Install the engine first, then the plugin:
+
 ```bash
 npx @pippit-dev/cli@latest install   # the engine
 pippit-tool-cli login                # then sign in
+
+dsh plugin --profile web add dsh-xyq # the plugin
 ```
 
-Then install the plugin from this directory with `plugin_manager
-install_bundle` (target = the absolute path) and click 小云雀 in the sidebar.
+Replace `web` with your profile name if it differs, and pin a version with
+`dsh-xyq@0.2.0`. Afterwards click 小云雀 in the sidebar, or find the same page
+under Settings.
+
+DeepSeek Harness Desktop manages its own profile, and the `dsh` command above
+refuses `--profile desktop` outright. Desktop users install in the app:
+Settings → Plugins, then enter `dsh-xyq`. For the command line, quit the desktop
+app completely first and use the CLI that ships with it, which is allowed to
+manage that profile:
+
+```bash
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" \
+  plugin --profile desktop add dsh-xyq
+```
+
+To run a checkout instead of a release, install the directory rather than the
+name — pnpm links it, and `files` stops filtering:
+
+```bash
+dsh plugin --profile web add /absolute/path/to/dsh-xyq
+```
 
 The plugin declares three client seats, and any of them is enough to reach it:
 

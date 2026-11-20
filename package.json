@@ -1,9 +1,30 @@
 {
   "name": "dsh-xyq",
-  "version": "0.1.1",
-  "private": true,
+  "version": "0.2.0",
   "type": "module",
   "description": "Xiaoyunque (XYQ / Pippit) toolbox for DeepSeek Harness: login state, credits, spaces, image and video generation, upload and result delivery.",
+  "license": "MIT",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "xiaoyunque",
+    "xyq",
+    "pippit",
+    "image-generation",
+    "video-generation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zb1649129135/dsh-xyq.git"
+  },
+  "homepage": "https://github.com/Zb1649129135/dsh-xyq#readme",
+  "bugs": {
+    "url": "https://github.com/Zb1649129135/dsh-xyq/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./lib/index.js",
   "exports": {
     ".": "./lib/index.js",
@@ -29,6 +50,7 @@
   },
   "icon": "./icon.svg",
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
     },

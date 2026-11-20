@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.0 — 2026-11-20
+
+Ready for npm, so the plugin installs by name instead of by absolute path.
+
+- `package.json` is publishable: `private` is gone, and `license`, `repository`,
+  `homepage`, `bugs`, `keywords`, `publishConfig.access` and
+  `dsh.manifestVersion` are filled in. The `files` list already carried the
+  patch, both locales, the detail documents, the icon and every runtime module;
+  `npm pack` ships 18 files.
+- No `engines.dsh` is declared on purpose. An absent range leaves compatibility
+  unknown, which keeps the bundle listed and installable; a wrong range fails
+  with `incompatible-version` before pnpm ever runs.
+- Installation is `dsh plugin --profile web add dsh-xyq`. Desktop users install
+  through Settings → Plugins, because the npm CLI refuses to manage the `desktop`
+  profile; the CLI that ships inside the desktop app accepts it once the app is
+  fully quit. Both READMEs say so, replacing the old "install this directory by
+  absolute path" instruction.
+
 ## 0.1.1 — 2026-11-20
 
 Four fixes from a UI review. The page is a status view and now says so.

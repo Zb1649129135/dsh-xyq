@@ -4,13 +4,36 @@ DeepSeek Harness 的小云雀（XYQ / Pippit）插件。它把 `pippit-tool-cli`
 harness：侧栏一个面板显示登录态与积分，输入框下方一个状态胶囊，另有六个 agent
 工具，可以生成图片与视频、上传素材、取回结果。
 
+## 安装
+
+先装引擎，再装插件：
+
 ```bash
 npx @pippit-dev/cli@latest install   # 引擎
 pippit-tool-cli login                # 然后登录
+
+dsh plugin --profile web add dsh-xyq # 插件
 ```
 
-然后用 `plugin_manager install_bundle` 安装本目录（target = 绝对路径），
-在侧栏点「小云雀」。
+profile 不叫 `web` 就换成自己的名字；要钉版本就写 `dsh-xyq@0.2.0`。
+装完在侧栏点「小云雀」，或者在 Settings 里找同一页。
+
+桌面版（DeepSeek Harness Desktop）的 profile 由应用自己看管，上面那条 `dsh`
+命令会直接拒绝 `--profile desktop`。桌面用户走应用内：Settings → Plugins，
+输入 `dsh-xyq` 安装。非要用命令行的话，先完全退出桌面应用，再用应用自带的那个
+CLI（它带管理桌面 profile 的权限）：
+
+```bash
+"/Applications/DeepSeek Harness.app/Contents/Resources/runtime/cli/bin/dsh" \
+  plugin --profile desktop add dsh-xyq
+```
+
+从仓库直接跑开发版时，装目录而不是包名——pnpm 会把它链接进来，`files` 也就不
+再过滤文件：
+
+```bash
+dsh plugin --profile web add /绝对路径/dsh-xyq
+```
 
 插件声明了三个客户端座位，任意一个都能到达它：
 
