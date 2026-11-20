@@ -21,6 +21,13 @@ sidebar foot that hosts the Settings seat is not drawn in every shell; each seat
 is registered through `slots.inject`, so an absent one costs that entry and
 nothing else.
 
+The page reports, it does not submit. Generation starts in the conversation —
+you ask the agent for an image or a video and `xyq_generate_image` /
+`xyq_generate_video` run — and the panel then lists the run, checks its progress,
+and opens the downloaded files. Nothing on the page can start a generation, and
+it says so above the run list rather than leaving an empty card that looks like a
+missing button.
+
 ## The CLI is the engine
 
 Every operation shells out to `pippit-tool-cli` and reads its JSON. Nothing here

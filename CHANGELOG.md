@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.1 — 2026-11-20
+
+Four fixes from a UI review. The page is a status view and now says so.
+
+- The run card states plainly that the page cannot submit: generation starts in
+  the conversation. An empty card used to look like a missing button, so the
+  sentence sits above the list whether or not runs exist. `detail/DETAIL*.md`
+  say the same.
+- Sign-in reports both outcomes. The request that starts `login` returns while
+  the browser is still open, so the page now watches `state.login` flip from
+  running to finished and then shows the CLI's error, or clears the note when the
+  account came back. A failed sign-in also turns the button into "sign in again"
+  (`signInForce`, previously defined and unused) and forces a fresh credential,
+  because the usual failure is a stale local token.
+- The Downloads button opens the download folder. The host spawns the platform
+  opener (`open`, `explorer`, `xdg-open`), detached and unref'd, so a missing
+  file manager cannot take the process down; it returns whether the opener
+  started. Its label was a copy of the read-only path row above it.
+- Check reports progress and hands back the files. It shows a "checking, media
+  may be downloaded" note while the call runs (it can take minutes), and then a
+  result card listing each downloaded path with an Open button and a `draft`
+  badge on preview videos. A new `open-file` action opens one of them; it refuses
+  any path outside the download directory, so the action route is not a general
+  file opener. Removing a run asks first.
+- `scripts/client-render.mjs` drives the Check path end to end and asserts the
+  result card lists both files with the draft badge; `scripts/host-smoke.mjs`
+  asserts `open-file` refuses an outside path and a missing one.
+
 ## 0.1.0 — 2026-11-19
 
 First working version.

@@ -146,6 +146,17 @@ check("refresh returns a snapshot", typeof refresh.json()?.state?.cli === "objec
 const wrongMethod = await call(STATE_ROUTE, request("POST", STATE_ROUTE));
 check("POST /state answers 405", wrongMethod.status === 405, `status ${wrongMethod.status}`);
 
+/* The Downloads button and the per-file links both end up here: a path guard that
+   accepts a stray absolute path would make the action route a file opener. */
+const outside = await call(ACTION_ROUTE, withBody(request("POST", ACTION_ROUTE), { action: "open-file", payload: { path: "/etc/passwd" } }));
+check(
+  "open-file refuses a path outside the download folder",
+  outside.status === 200 && outside.json()?.ok === false && outside.json()?.opened === false,
+  `${outside.status} ${outside.json()?.error ?? ""}`,
+);
+const blankFile = await call(ACTION_ROUTE, withBody(request("POST", ACTION_ROUTE), { action: "open-file", payload: {} }));
+check("open-file refuses a missing path", blankFile.json()?.ok === false, blankFile.json()?.error ?? "");
+
 /* ---------------------------------------------------------------- *
  * a tool call end to end
  * ---------------------------------------------------------------- */

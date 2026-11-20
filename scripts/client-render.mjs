@@ -85,34 +85,45 @@ const document = {
 
 /** Requests the page makes; collected so the test can assert on them. */
 const requests = [];
+/** Per-action replies for POST, so a scenario can drive one path (e.g. `query`). */
+const postReplies = new Map();
 function fetch(url, init) {
   requests.push({ url, init });
-  const body =
-    init && init.method === "POST"
-      ? { ok: true, state: null, models: [], result: null }
-      : {
-          cli: { found: true, command: "D:\\app\\nvm\\nodejs\\node_modules\\@pippit-dev\\cli\\bin\\pippit-tool-cli.exe", version: "1.0.57", tried: [] },
-          auth: { loggedIn: true, uid: "12345", expiresAt: "2026-12-01T00:00:00Z", error: null },
-          credit: { totalRemain: "1200", logId: "", error: null },
-          login: { running: false },
-          runs: [
-            {
-              runId: "r1",
-              threadId: "t1",
-              kind: "image",
-              prompt: "一只在雨里走路的小鸟",
-              status: "succeeded",
-              webThreadLink: "https://xyq.jianying.com/thread/t1",
-              createdAt: Date.now(),
-            },
-          ],
-          config: {
-            downloadDir: "C:\\Users\\Administrator\\.dsh\\xyq\\downloads",
-            stateDir: "C:\\Users\\Administrator\\.dsh\\xyq",
-            teamId: "",
-            cwd: "",
-          },
-        };
+  let body;
+  if (init && init.method === "POST") {
+    const action = (() => {
+      try {
+        return JSON.parse(init.body).action;
+      } catch {
+        return "";
+      }
+    })();
+    body = postReplies.get(action) ?? { ok: true, state: null, models: [], result: null };
+  } else {
+    body = {
+      cli: { found: true, command: "D:\\app\\nvm\\nodejs\\node_modules\\@pippit-dev\\cli\\bin\\pippit-tool-cli.exe", version: "1.0.57", tried: [] },
+      auth: { loggedIn: true, uid: "12345", expiresAt: "2026-12-01T00:00:00Z", error: null },
+      credit: { totalRemain: "1200", logId: "", error: null },
+      login: { running: false },
+      runs: [
+        {
+          runId: "r1",
+          threadId: "t1",
+          kind: "image",
+          prompt: "一只在雨里走路的小鸟",
+          status: "succeeded",
+          webThreadLink: "https://xyq.jianying.com/thread/t1",
+          createdAt: Date.now(),
+        },
+      ],
+      config: {
+        downloadDir: "C:\\Users\\Administrator\\.dsh\\xyq\\downloads",
+        stateDir: "C:\\Users\\Administrator\\.dsh\\xyq",
+        teamId: "",
+        cwd: "",
+      },
+    };
+  }
   return Promise.resolve({
     ok: true,
     status: 200,
@@ -263,6 +274,115 @@ for (const item of rendered) {
   } catch (error) {
     failures += 1;
     console.log(`  !! ${item.label} threw on re-render: ${String(error && error.stack ? error.stack.split("\n")[0] : error)}`);
+  }
+}
+
+/* ---------------------------------------------------------------- *
+ * scenario: press Check and read the result card
+ * ---------------------------------------------------------------- */
+
+/**
+ * The empty/loaded render above cannot reach the Check path, which is the one
+ * place the page reports progress and hands back files. This drives it: click the
+ * run's button, let the stubbed `query` reply land, then read the new text.
+ */
+function buttonsIn(tree) {
+  const found = [];
+  const visit = (node) => {
+    if (node === null || node === undefined || node === false) return;
+    if (Array.isArray(node)) return node.forEach(visit);
+    if (typeof node !== "object") return;
+    /* `Button` is a component, so the real <button> is one level below it. The
+       harness keeps children out of props, so hand them over the way React does. */
+    if (typeof node.type === "function") {
+      return visit(node.type({ ...(node.props ?? {}), children: node.children ?? [] }));
+    }
+    if (node.type === "button") {
+      const label = [];
+      const collect = (child) => {
+        if (child === null || child === undefined || child === false) return;
+        if (Array.isArray(child)) return child.forEach(collect);
+        if (typeof child === "object") return (child.children ?? []).forEach(collect);
+        label.push(String(child));
+      };
+      collect(node.children ?? []);
+      found.push({ label: label.join(""), node });
+    }
+    (node.children ?? []).forEach(visit);
+  };
+  visit(tree);
+  return found;
+}
+
+const settingsEntry = registered.find((item) => item.options.name === "settings.section");
+if (settingsEntry === undefined) {
+  failures += 1;
+  console.log("  !! the settings seat was not registered, the Check scenario cannot run");
+} else {
+  postReplies.set("query", {
+    ok: true,
+    result: {
+      status: "succeeded",
+      completed: true,
+      errorMessage: null,
+      images: [{ url: "https://example.invalid/a.png", path: "C:\\Users\\Administrator\\.dsh\\xyq\\downloads\\a.png" }],
+      videos: [
+        { url: "https://example.invalid/b.mp4", path: "C:\\Users\\Administrator\\.dsh\\xyq\\downloads\\b.mp4", draft: true },
+      ],
+    },
+    state: null,
+  });
+  const scenario = render(settingsEntry.component, { close() {} });
+  walk(scenario.tree);
+  for (const effect of scenario.effects) runEffect(effect);
+  const check = buttonsIn(scenario.tree).find((item) => item.label === "查询" || item.label === "Check");
+  if (check === undefined) {
+    failures += 1;
+    console.log("  !! no Check button on the run row");
+  } else {
+    check.node.props.onClick();
+    const afterClick = render(settingsEntry.component, { close() {} });
+    const pending = [];
+    const collect = (node) => {
+      if (node === null || node === undefined || node === false) return;
+      if (Array.isArray(node)) return node.forEach(collect);
+      if (typeof node !== "object") {
+        const value = String(node).trim();
+        if (value !== "") pending.push(value);
+        return;
+      }
+      if (typeof node.type === "function") return;
+      (node.children ?? []).forEach(collect);
+    };
+    collect(afterClick.tree);
+    console.log(`  check in flight: ${pending.filter((line) => line.length < 60).slice(-3).join(" · ")}`);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const settled = render(settingsEntry.component, { close() {} });
+    walk(settled.tree);
+    const texts = [];
+    const gather = (node) => {
+      if (node === null || node === undefined || node === false) return;
+      if (Array.isArray(node)) return node.forEach(gather);
+      if (typeof node !== "object") {
+        const value = String(node).trim();
+        if (value !== "") texts.push(value);
+        return;
+      }
+      if (typeof node.type === "function") return;
+      (node.children ?? []).forEach(gather);
+    };
+    gather(settled.tree);
+    console.log(`  after check: ${texts.slice(0, 18).join(" · ")}`);
+    const card = texts.some((line) => line.indexOf("a.png") >= 0) && texts.some((line) => line.indexOf("b.mp4") >= 0);
+    const badge = texts.some((line) => line === "草稿" || line === "draft");
+    if (!card) {
+      failures += 1;
+      console.log("  !! the result card did not list the downloaded files");
+    }
+    if (!badge) {
+      failures += 1;
+      console.log("  !! the draft video has no badge");
+    }
   }
 }
 
