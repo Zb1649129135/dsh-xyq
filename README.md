@@ -1,108 +1,93 @@
 # dsh-xyq
 
-A DeepSeek Harness plugin for Xiaoyunque (小云雀 / XYQ / Pippit). It surfaces the
-`pippit-tool-cli` toolkit inside the harness: a sidebar panel with sign-in state
-and credits, a status pill under the composer, and six agent tools that
-generate images and videos, upload source files, and fetch results.
+DeepSeek Harness 的小云雀（XYQ / Pippit）插件。它把 `pippit-tool-cli` 搬进
+harness：侧栏一个面板显示登录态与积分，输入框下方一个状态胶囊，另有六个 agent
+工具，可以生成图片与视频、上传素材、取回结果。
 
 ```bash
-npx @pippit-dev/cli@latest install   # the engine
-pippit-tool-cli login                # then sign in
+npx @pippit-dev/cli@latest install   # 引擎
+pippit-tool-cli login                # 然后登录
 ```
 
-Then install the plugin from this directory with `plugin_manager
-install_bundle` (target = the absolute path) and click 小云雀 in the sidebar.
+然后用 `plugin_manager install_bundle` 安装本目录（target = 绝对路径），
+在侧栏点「小云雀」。
 
-The plugin declares three client seats, and any of them is enough to reach it:
+插件声明了三个客户端座位，任意一个都能到达它：
 
-| Seat | What it draws |
+| 座位 | 画什么 |
 | --- | --- |
-| `sidebar.panellist` + `main` | The 小云雀 row in the sidebar and the panel page behind it. |
-| `settings.section` | A page under Settings, at order 63. |
-| `conversation.composer.dock` | The status pill under the composer. |
+| `sidebar.panellist` + `main` | 侧栏的「小云雀」行，以及点开后的面板页。 |
+| `settings.section` | 设置里的一页，order 63。 |
+| `conversation.composer.dock` | 输入框下方的状态胶囊。 |
 
-Each seat is registered through `slots.inject`, so a shell that never declares
-one leaves that entry absent instead of failing to boot.
+每个座位都经 `slots.inject` 注册，所以不声明该座位的 shell 只会让那一项缺席，
+不会让插件启动失败。
 
-## Tools
+## 工具
 
-| Tool | Does |
+| 工具 | 作用 |
 | --- | --- |
-| `xyq_status` | CLI location and version, sign-in state, credential expiry, credit balance. |
-| `xyq_models` | Image or video model catalogue; pass a name to describe one model. |
-| `xyq_generate_image` | Submit an image run. Needs `prompt` and `model`. |
-| `xyq_generate_video` | Submit a video run; accepts reference images, videos, and audio. |
-| `xyq_result` | Read a run, download its media, and report where it landed. |
-| `xyq_upload` | Upload a local file or an HTTPS URL and return the asset id. |
+| `xyq_status` | CLI 位置与版本、登录态、凭证到期时间、积分余额。 |
+| `xyq_models` | 图片或视频模型目录；传名字则描述单个模型。 |
+| `xyq_generate_image` | 提交图片任务。需要 `prompt` 与 `model`。 |
+| `xyq_generate_video` | 提交视频任务，可带参考图、参考视频、参考音频。 |
+| `xyq_result` | 读任务、下载素材、报告落盘位置。 |
+| `xyq_upload` | 上传本地文件或 HTTPS URL，返回素材 id。 |
 
-Generation returns a thread id, a run id, and a web link — the media follows
-later, which is what `xyq_result` is for. Pass either id: the other one is
-recovered from the run journal.
+生成返回 thread id、run id 和网页链接——素材随后才到，`xyq_result` 就是用来取它的。
+两个 id 给一个就够，另一个从任务日志里补。
 
-## Layout
+## 结构
 
 ```
 dsh-xyq/
-  lib/cli.js      launch discovery, JSON parsing, one child process per call
-  lib/store.js    state directory, run journal, atomic JSON writes
-  lib/ops.js      every CLI operation, plus the cached state snapshot
-  lib/index.js    tools and web routes (host half)
-  lib/client.js   sidebar panel, settings page, composer pill (web half)
-  locale/         en.json, zh.json — plugin manager metadata
-  detail/         the long description shown on the plugin page
-  assets/pay/     WeChat Pay and Alipay QR codes
+  lib/cli.js      定位启动方式、解析 JSON、每次调用一个子进程
+  lib/store.js    状态目录、任务日志、原子写 JSON
+  lib/ops.js      所有 CLI 操作，以及缓存的快照
+  lib/index.js    工具与 web 路由（host 半边）
+  lib/client.js   侧栏面板、设置页与输入框胶囊（web 半边）
+  locale/         en.json、zh.json —— 插件管理器的元数据
+  detail/         插件详情页那段长描述
+  assets/pay/     微信、支付宝收款码
 ```
 
-## Configuration
+## 配置
 
-`cliPath`, `cwd`, `downloadDir`, `teamId`, `stateTtlMs` — documented in
-[detail/DETAIL.md](detail/DETAIL.md). They are set on the plugin row, so a
-change needs no rebuild.
+`cliPath`、`cwd`、`downloadDir`、`teamId`、`stateTtlMs`——说明见
+[detail/DETAIL.zh.md](detail/DETAIL.zh.md)。它们写在插件行上，改动不用重新构建。
 
-## Notes
+## 说明
 
-- The plugin never reads the access key. Sign-in shells out to
-  `pippit-tool-cli login`, which stores the credential itself.
-- Nothing is polled in the background. The panel refreshes on open, on window
-  focus, and on demand; the pill shares that snapshot.
-- The web routes require the harness browser session, so a script — or a model
-  with shell access — cannot drive the CLI on your behalf.
-- Disabling and enabling the plugin is enough to pick up a changed `lib/*.js`;
-  no restart is needed. The routes are owned by the plugin's fiber, and the
-  surviving route objects read the newest handler through a table on
-  `globalThis`, because the web server refuses a second registration for the
-  same path.
-- That trampoline only helps once a copy of it is holding the route. A harness
-  started before it existed keeps serving the handler it registered then, and no
-  reload can reach it — so the path is tagged (`/dsh-xyq/v2/…`). A path that was
-  never registered is always free, which is what makes the tag work on an
-  already-running harness. Bump it only for a change the old path cannot absorb;
-  ordinary changes ride the trampoline.
+- 插件从不读取 access key。登录外挂 `pippit-tool-cli login`，凭证由 CLI 自己保存。
+- 后台不做任何轮询。面板在打开、窗口获得焦点、手动刷新时更新；胶囊共用同一份快照。
+- web 路由要求 harness 的浏览器会话，所以脚本（以及有 shell 权限的模型）无法代你驱动 CLI。
+- 停用再启用插件就够让改动过的 `lib/*.js` 生效，不必重启。路由由插件的 fiber 持有；
+  沿用下来的那个 route 对象通过 `globalThis` 上的表读取最新的 handler，
+  因为 web server 不允许同一路径注册第二次。
+- 那个跳板只有在真的有一条它自己的副本占着路由之后才管用。早于它启动的 harness
+  会一直服务当初注册的 handler，任何重载都够不到它——所以路径带一段版本号
+  （`/dsh-xyq/v2/…`）。从未注册过的路径一定是空的，这正是版本号能在运行中的
+  harness 上生效的原因。只有旧路径自己吸收不了的改动才需要提升这个版本号，
+  平常的改动走跳板即可。
 
-## Buy the author a coffee
+## 请作者喝杯咖啡
 
-This plugin was built in the gaps between other things — evenings, weekends, the
-odd half hour before a meeting. Plenty of it was not fun: `pippit-tool-cli` will
-append a notice line to its stdout at any moment, so the JSON has to be fished
-back out of the noise; the harness web server refuses a second registration for
-the same path, so the routes ride a trampoline table on `globalThis`; and the
-sidebar panel has to serve three client seats at once, none of which may be
-allowed to stop the plugin from booting. There was no budget and no deadline
-behind any of it. Only the fact that I wanted to use it myself.
+这个插件是下班之后、周末之前，一点一点挤时间写出来的。中间踩的坑不少：
+`pippit-tool-cli` 的 stdout 随时会多出一行提示，JSON 得从噪声里捞；harness 的
+web server 不允许同一路径注册第二次，路由只能靠 `globalThis` 上的表做跳板；
+侧栏面板要同时伺候三个客户端座位，缺一个也不能让插件起不来。这些都没有预算，
+也没有排期，靠的只是「自己也想用」这一条。
 
-So it is free, has no ads, and collects nothing. The code is all here to read
-and change. If it genuinely saved you a few hours — or you would simply rather
-it did not quietly stop being maintained one day — scan one of the codes below.
-Any amount is fine; a one-yuan instant coffee wakes me up just as well as a
-thirty-yuan pour-over.
+所以它不收费、不带广告、不收集任何数据，代码全部摆在这里，随便看、随便改。
+如果它确实替你省下了几个小时，或者你只是希望它别在某天悄悄停更——可以扫下面
+的码，请我喝杯咖啡。金额随意，一元的速溶和三十元的手冲，提神效果是一样的。
 
-| WeChat Pay | Alipay |
+| 微信 | 支付宝 |
 | :---: | :---: |
-| <img src="assets/pay/wechat.png" alt="WeChat Pay QR code" width="220"> | <img src="assets/pay/alipay.png" alt="Alipay QR code" width="220"> |
+| <img src="assets/pay/wechat.png" alt="微信收款码" width="220"> | <img src="assets/pay/alipay.png" alt="支付宝收款码" width="220"> |
 
-No need to scan anything, though. Filing an issue that says exactly where you
-got stuck, pointing out a vague sentence in the docs, or just passing the plugin
-on to someone who might use it — those help more than money does, and they make
-it better.
+不方便扫码也完全没关系。提一个 issue 说清楚哪一步卡住了、把文档里含糊的地方
+指出来、或者只是把插件转给可能用得上的朋友——这些支持比钱实在，也更能让它
+变得好用。
 
-Thanks for reading this far, and for spending your time here.
+谢谢你看完这一段，也谢谢你把时间花在这里。
