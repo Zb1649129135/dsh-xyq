@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.1 — 2026-11-22
+
+A video submission now fails before it spends a run, instead of after.
+
+- `generate-video` requires `model`, `ratio`, `duration_sec` and `resolution`, and
+  the CLI substitutes none of them. The tool schema had all four optional, so any
+  call that omitted one died with `缺少必填字段`. They are still optional to the
+  caller — the model's own defaults fill them — but they are now always sent.
+- A ratio or resolution the model does not list is rejected locally. The CLI posts
+  the task before the service validates it, so `--ratio bogus` used to submit a
+  real run and then fail with `视频比例参数不符合模型规范` — one wasted run per
+  attempt. The accepted set comes from the model (`wan3.0` has no 21:9,
+  `happyhorse-1.1` has no adaptive, the mini models take no resolution).
+- The `ratio` enum is gone from the tool schema. A fixed list of
+  `9:16/16:9/3:4/4:3` rejected `adaptive`, `21:9` and `1:1`, which most video
+  models accept.
+- `xyq_result` always passes `--download-dir`; the CLI treats it as mandatory, so
+  the old `download: false` option could only ever return
+  `status: "unknown"` with `缺少必填参数 --download-dir`. The option is removed.
+- A video run records the parameters it was submitted with, and the reply repeats
+  them, so a surprising result can be traced to what was asked for.
+
 ## 0.3.0 — 2026-11-22
 
 Media now lands beside the work that produced it, instead of in one shared folder.

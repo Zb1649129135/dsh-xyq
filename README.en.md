@@ -64,6 +64,22 @@ Generation returns a thread id, a run id, and a web link — the media follows
 later, which is what `xyq_result` is for. Pass either id: the other one is
 recovered from the run journal.
 
+### Video arguments: the service wants four, the model knows the defaults
+
+The service requires `model`, `ratio`, `duration_sec` and `resolution`, and the
+CLI supplies none of them. You may therefore omit all four — the plugin fills
+them from the model's own parameter table — but the request always carries them.
+
+The ratio and the resolution are checked locally. The CLI **posts the task and
+then** lets the service reject it, so a bad ratio costs a wasted run. Which values
+are legal depends on the model (`wan3.0` has no 21:9, `happyhorse-1.1` has no
+adaptive, the mini models take no resolution at all), so read them from
+`xyq_models` for the model you picked.
+
+`xyq_result` always passes `--download-dir`, which the CLI also treats as
+mandatory; there is no option to skip the download. A video run records the
+arguments it was submitted with, and the reply repeats them.
+
 ## Where the media lands
 
 A run submitted from a conversation stores its media **in that session's

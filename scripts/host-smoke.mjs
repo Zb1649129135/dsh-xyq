@@ -245,6 +245,41 @@ if (runs.length > 0) {
   console.log("  ok  journal is empty, skipped the one-id query");
 }
 
+/*
+ * `generate-video` requires model, ratio, duration_sec and resolution, and the CLI
+ * substitutes none of them. A rejected call is therefore cheap to test — it fails
+ * before any request leaves the machine — while a ratio the model does not accept
+ * used to be posted and then fail on the server, costing a run per attempt.
+ */
+const video = tools.get("xyq_generate_video");
+const noModel = await video.execute({ prompt: "test" }, {});
+check(
+  "generate_video refuses a missing model before spending a run",
+  typeof noModel?.report === "string" && noModel.report.includes("model"),
+  noModel?.report,
+);
+
+const badRatio = await video.execute({ prompt: "test", model: "Seedance_2.0_mini", ratio: "21:9x" }, {});
+check(
+  "generate_video rejects a ratio the model does not list",
+  typeof badRatio?.report === "string" && badRatio.report.includes("21:9x") && badRatio.report.includes("16:9"),
+  badRatio?.report,
+);
+
+const badLength = await video.execute({ prompt: "test", model: "Seedance_2.0_mini", duration: 999 }, {});
+check(
+  "generate_video rejects a duration outside the model's range",
+  typeof badLength?.report === "string" && badLength.report.includes("999"),
+  badLength?.report,
+);
+
+const unknownModel = await video.execute({ prompt: "test", model: "__no_such_model__" }, {});
+check(
+  "generate_video refuses a model it cannot describe",
+  typeof unknownModel?.report === "string" && !unknownModel.report.includes("已提交"),
+  unknownModel?.report,
+);
+
 for (const dispose of disposers.splice(0)) {
   try {
     if (typeof dispose === "function") dispose();

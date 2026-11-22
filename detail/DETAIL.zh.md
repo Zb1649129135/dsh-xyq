@@ -64,6 +64,25 @@ CLI 就等于扩展了插件的能力。查找顺序：
 两个「打开」动作的白名单也跟着变了：`open-file` 只接受这些产物目录里的文件，
 `open-download-dir` 只接受插件自己会写的目录，因为这两个动作在浏览器里就能触发。
 
+## 校验放在提交之前
+
+服务端对 `generate-video` 的要求是四个字段都得有：`model`、`ratio`、
+`duration_sec`、`resolution`，CLI 一个都不补。把这四个都设成可选是错的——少一个就
+是 `缺少必填字段`，一次都发不出去。现在调用方仍可以不写：插件按模型的参数表
+（`model <key> -t video` 返回的 `ratio.options`、`resolution.options`、
+`duration.default`）把默认值填上，请求里一定有这四项。
+
+真正的坑在比例上。CLI **先提交任务，再由服务端校验**，所以 `--ratio bogus` 会拿到
+一份合法的 thread id 和 run id，然后任务失败在
+`创作失败：视频比例参数不符合模型规范`——一次运行白花。图片侧不是这样：
+`generate-image --ratio 99` 在本地就被挡下，根本不发请求。视频侧因此得自己做同一件
+事，而且合法集因模型而异（`wan3.0` 没有 21:9，`happyhorse-1.1` 没有 adaptive，mini
+系不接受清晰度），硬编码一份列表只会误拒，所以按模型自查。
+
+`query-result` 的 `--download-dir` 同样是硬必填。少了它返回的不是错误，而是一个看
+起来像失败的 `status:"unknown"` 加 `查询失败：缺少必填参数 --download-dir`。所以它
+没有「不下载、只看状态」的选项，每次都传目录。
+
 ## 重新加载
 
 停用再启用插件就够让改动过的 `lib/*.js` 生效，不必重启。这听上去是个细节，却逼出了

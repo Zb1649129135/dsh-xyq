@@ -80,6 +80,30 @@ Both "open" actions follow the same shift: `open-file` accepts only files inside
 these product folders, and `open-download-dir` only folders this plugin itself
 writes to, because either action can be triggered from the page.
 
+## Validation happens before the submit
+
+The service wants four fields on `generate-video` — `model`, `ratio`,
+`duration_sec`, `resolution` — and the CLI substitutes none of them. Declaring all
+four optional was wrong: omit one and the request dies with `缺少必填字段` before
+it leaves the machine. A caller may still omit them, because the plugin fills them
+from the model's own parameter table (`ratio.options`, `resolution.options`,
+`duration.default` from `model <key> -t video`), but the request always carries
+all four.
+
+The trap is the ratio. The CLI **posts the task and only then** lets the service
+validate it, so `--ratio bogus` returns a perfectly good thread id and run id and
+the run then fails with `创作失败：视频比例参数不符合模型规范` — a run spent on
+nothing. Images do not behave this way: `generate-image --ratio 99` is refused
+locally and never sent. Video needs the same guard, and the legal set differs per
+model (`wan3.0` has no 21:9, `happyhorse-1.1` has no adaptive, the mini models
+expose no resolution), so a hard-coded list can only reject valid values. It is
+checked against the model instead.
+
+`query-result` treats `--download-dir` the same way. Without it the answer is not
+an error but something that looks like a failed run: `status:"unknown"` plus
+`查询失败：缺少必填参数 --download-dir`. There is therefore no "just check, do not
+download" mode; the folder is always passed.
+
 ## Reloading
 
 Disabling and re-enabling the plugin is enough to load a changed `lib/*.js`; no
