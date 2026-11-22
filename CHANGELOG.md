@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0 — 2026-11-22
+
+One folder per conversation instead of one per run.
+
+- A run submitted from a conversation now downloads into
+  `<workspace>/.xyq/<first 8 chars of the session id>/`. Everything generated
+  from one conversation — images and videos alike — shares that folder, so a
+  batch stays together and no run gets a folder of its own. A conversation that
+  generated nothing leaves no folder behind.
+- Journal entries gained `sessionId`. Entries written by 0.3.0 recorded the folder
+  they had already chosen, so they keep landing where they landed; earlier ones
+  still fall back to `downloadDir`.
+- The folder rule shown in the panel reads `<workspace>/.xyq/<session id>`, and
+  the result card is labelled "this conversation" rather than "this run".
+
 ## 0.3.1 — 2026-11-22
 
 A video submission now fails before it spends a run, instead of after.

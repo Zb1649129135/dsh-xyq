@@ -394,7 +394,7 @@ if (settingsEntry === undefined) {
     }
     if (!landed) {
       failures += 1;
-      console.log("  !! the result card did not show the run's own folder");
+      console.log("  !! the result card did not show the conversation's own folder");
     }
   }
 }

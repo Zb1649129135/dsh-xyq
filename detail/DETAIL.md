@@ -48,9 +48,10 @@ missing.
 
 `generate-image` and `generate-video` submit a run and return a thread id, a run
 id, and a web link. The media arrives later. Ask for it with `xyq_result`, which
-calls `query-result` and downloads into **that run's own folder**. Each run is
-recorded in `runs.json` next to the plugin state, so the panel can list recent
-work even after a restart, and `xyq_result` can resume a run by id alone.
+calls `query-result` and downloads into **the folder of the conversation that
+submitted the run**. Each run is recorded in `runs.json` next to the plugin
+state, so the panel can list recent work even after a restart, and `xyq_result`
+can resume a run by id alone.
 
 ## Media follows the workspace
 
@@ -59,8 +60,13 @@ is the product of this piece of work, so it belongs next to it. The folder is
 now decided at submit time and written into the run journal:
 
 ```
-<session workspace>/.xyq/<first 8 chars of the run id>/
+<session workspace>/.xyq/<first 8 chars of the session id>/
 ```
+
+**One folder per conversation, not per run.** Images and videos generated from
+one conversation share that folder, so a batch is recognisable at a glance;
+giving every image its own folder only adds clicks. A conversation that never
+generated anything leaves no folder behind.
 
 It is decided at **submit** time and stored on the **run** rather than at poll
 time from the caller, because the two callers know different things. A tool has
@@ -139,7 +145,7 @@ ordinary logic changes ride the trampoline.
 | --- | --- |
 | `cliPath` | Explicit path to the CLI. Empty means auto-discover. |
 | `cwd` | Working directory for CLI calls. The CLI reads `config.toml` from its current directory, so this is how you point it at a PPE environment. |
-| `downloadDir` | Where runs without a workspace — and runs submitted before this change — save media. Empty means `<DSH home>/xyq/downloads`. A run with a workspace lands in `<workspace>/.xyq/<run id>/` and ignores this key. |
+| `downloadDir` | Where runs without a workspace — and runs submitted before this change — save media. Empty means `<DSH home>/xyq/downloads`. A run with a workspace lands in `<workspace>/.xyq/<session id>/` and ignores this key. |
 | `teamId` | Team space id. Empty means the CLI's own default; `0` means the personal space. |
 | `stateTtlMs` | How long a state snapshot is reused before the next CLI call. |
 

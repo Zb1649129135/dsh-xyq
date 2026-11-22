@@ -1,6 +1,6 @@
 {
   "name": "dsh-xyq",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "type": "module",
   "description": "Xiaoyunque (XYQ / Pippit) toolbox for DeepSeek Harness: login state, credits, spaces, image and video generation, upload and result delivery.",
   "license": "MIT",

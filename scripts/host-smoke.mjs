@@ -174,30 +174,38 @@ check(
 
 console.log("landing folders");
 const store = await import("../lib/store.js");
-const id = store.shortRunId("skill_1a2b3c4d-5e6f-7890-abcd-ef0123456789", "");
-check("a run id becomes a folder name", id === "1a2b3c4d", id);
+const id = store.shortSessionId("session-1a2b3c4d-5e6f-7890-abcd-ef0123456789");
+check("a session id becomes a folder name", id === "1a2b3c4d", id);
+check("a bare id is reduced the same way", store.shortSessionId("f6a39b92-29f2") === "f6a39b92", store.shortSessionId("f6a39b92-29f2"));
+check("an empty session id yields no folder", store.shortSessionId("") === "");
 check(
-  "the task folder sits under the workspace",
-  store.taskDirectory("D:/work", "abc").replace(/\\/g, "/").endsWith("/work/.xyq/abc"),
-  store.taskDirectory("D:/work", "abc"),
+  "the conversation folder sits under the workspace",
+  store.sessionDirectory("D:/work", "abc").replace(/\\/g, "/").endsWith("/work/.xyq/abc"),
+  store.sessionDirectory("D:/work", "abc"),
 );
 const fallback = store.resolveDownloadDir("");
 check(
   "an explicit dir wins",
-  store.resolveRunDir({ dir: "D:/picked", recorded: "D:/recorded", workspace: "D:/ws", runId: "abc", fallback }) === store.resolveRunDir({ dir: "D:/picked", fallback }),
-  store.resolveRunDir({ dir: "D:/picked", recorded: "D:/recorded", workspace: "D:/ws", runId: "abc", fallback }),
+  store.resolveRunDir({ dir: "D:/picked", recorded: "D:/recorded", workspace: "D:/ws", sessionId: "s1", fallback }) === store.resolveRunDir({ dir: "D:/picked", fallback }),
+  store.resolveRunDir({ dir: "D:/picked", recorded: "D:/recorded", workspace: "D:/ws", sessionId: "s1", fallback }),
 );
 check(
-  "a recorded dir survives a later call from another session",
-  store.resolveRunDir({ recorded: "D:/recorded", workspace: "D:/other", runId: "abc", fallback }) === store.resolveRunDir({ recorded: "D:/recorded", fallback }),
-  store.resolveRunDir({ recorded: "D:/recorded", workspace: "D:/other", runId: "abc", fallback }),
+  "a recorded dir survives a later call from another conversation",
+  store.resolveRunDir({ recorded: "D:/recorded", workspace: "D:/other", sessionId: "s2", fallback }) === store.resolveRunDir({ recorded: "D:/recorded", fallback }),
+  store.resolveRunDir({ recorded: "D:/recorded", workspace: "D:/other", sessionId: "s2", fallback }),
 );
 check(
-  "a fresh run lands in its workspace",
-  store.resolveRunDir({ workspace: "D:/ws", runId: "abcdef", fallback }) === store.taskDirectory("D:/ws", "abcdef"),
-  store.resolveRunDir({ workspace: "D:/ws", runId: "abcdef", fallback }),
+  "a fresh run lands in its conversation's folder",
+  store.resolveRunDir({ workspace: "D:/ws", sessionId: "session-abcdef01-2345", fallback }) === store.sessionDirectory("D:/ws", "abcdef01"),
+  store.resolveRunDir({ workspace: "D:/ws", sessionId: "session-abcdef01-2345", fallback }),
 );
-check("without a workspace the shared folder is the fallback", store.resolveRunDir({ runId: "abcdef", fallback }) === fallback);
+check(
+  "two runs from one conversation share one folder",
+  store.resolveRunDir({ workspace: "D:/ws", sessionId: "session-abcdef01-2345", fallback }) ===
+    store.resolveRunDir({ workspace: "D:/ws", sessionId: "session-abcdef01-2345", fallback }),
+);
+check("without a workspace the shared folder is the fallback", store.resolveRunDir({ sessionId: "session-abcdef01-2345", fallback }) === fallback);
+check("without a session id the shared folder is the fallback", store.resolveRunDir({ workspace: "D:/ws", fallback }) === fallback);
 
 /* ---------------------------------------------------------------- *
  * a tool call end to end

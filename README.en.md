@@ -83,11 +83,15 @@ arguments it was submitted with, and the reply repeats them.
 ## Where the media lands
 
 A run submitted from a conversation stores its media **in that session's
-workspace**, one folder per run:
+workspace**, one folder per conversation:
 
 ```
-<workspace>/.xyq/<first 8 chars of the run id>/
+<workspace>/.xyq/<first 8 chars of the session id>/
 ```
+
+Everything generated from one conversation — images and videos alike — sits in
+that single folder, so a batch is obvious at a glance and no run gets a folder
+of its own. A conversation that generated nothing leaves no folder behind.
 
 The folder is recorded when the run is submitted, so a later poll lands in the
 same place whichever caller asks — the panel button, `xyq_result`, or another
@@ -97,7 +101,7 @@ change. The `dir` argument of `xyq_result` overrides the location for one call
 and is not written back to the run.
 
 Every run row carries an "open folder" button, and the result card shows the
-folder for that particular poll.
+folder belonging to the conversation.
 
 ## Layout
 
