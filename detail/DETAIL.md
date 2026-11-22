@@ -48,10 +48,37 @@ missing.
 
 `generate-image` and `generate-video` submit a run and return a thread id, a run
 id, and a web link. The media arrives later. Ask for it with `xyq_result`, which
-calls `query-result` and, by default, downloads into the plugin's download
-directory. Each run is recorded in `runs.json` next to the plugin state, so the
-panel can list recent work even after a restart, and `xyq_result` can resume a
-run by id alone.
+calls `query-result` and downloads into **that run's own folder**. Each run is
+recorded in `runs.json` next to the plugin state, so the panel can list recent
+work even after a restart, and `xyq_result` can resume a run by id alone.
+
+## Media follows the workspace
+
+At first every run downloaded into one shared folder, which is wrong: the media
+is the product of this piece of work, so it belongs next to it. The folder is
+now decided at submit time and written into the run journal:
+
+```
+<session workspace>/.xyq/<first 8 chars of the run id>/
+```
+
+It is decided at **submit** time and stored on the **run** rather than at poll
+time from the caller, because the two callers know different things. A tool has
+`exec.agent` and can read the session's workspace (authoritatively from the
+host's `workingDirectory` service; `session.header.cwd` is only where the
+session started and cannot follow a later move). The panel button goes over
+HTTP, has no agent at all, and knows nothing. Recording the decision on the run
+means a later poll lands in the same folder whichever side asks.
+
+`downloadDir` therefore degrades into a fallback: it only receives runs with no
+workspace, plus runs submitted before this change, whose journal entries have no
+folder field. Old runs are not migrated — they are already where they are. The
+`dir` argument of `xyq_result` overrides the landing folder for one call and is
+not written back to the run.
+
+Both "open" actions follow the same shift: `open-file` accepts only files inside
+these product folders, and `open-download-dir` only folders this plugin itself
+writes to, because either action can be triggered from the page.
 
 ## Reloading
 
@@ -88,7 +115,7 @@ ordinary logic changes ride the trampoline.
 | --- | --- |
 | `cliPath` | Explicit path to the CLI. Empty means auto-discover. |
 | `cwd` | Working directory for CLI calls. The CLI reads `config.toml` from its current directory, so this is how you point it at a PPE environment. |
-| `downloadDir` | Where `query-result` saves media. Empty means `<DSH home>/xyq/downloads`. |
+| `downloadDir` | Where runs without a workspace — and runs submitted before this change — save media. Empty means `<DSH home>/xyq/downloads`. A run with a workspace lands in `<workspace>/.xyq/<run id>/` and ignores this key. |
 | `teamId` | Team space id. Empty means the CLI's own default; `0` means the personal space. |
 | `stateTtlMs` | How long a state snapshot is reused before the next CLI call. |
 

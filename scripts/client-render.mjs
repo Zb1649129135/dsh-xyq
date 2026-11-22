@@ -330,6 +330,8 @@ if (settingsEntry === undefined) {
         { url: "https://example.invalid/b.mp4", path: "C:\\Users\\Administrator\\.dsh\\xyq\\downloads\\b.mp4", draft: true },
       ],
     },
+    /* The Host decides the landing folder; the page only echoes it. */
+    downloadDir: "D:\\work\\proj\\.xyq\\4a1b2c3d",
     state: null,
   });
   const scenario = render(settingsEntry.component, { close() {} });
@@ -360,21 +362,28 @@ if (settingsEntry === undefined) {
     const settled = render(settingsEntry.component, { close() {} });
     walk(settled.tree);
     const texts = [];
-    const gather = (node) => {
+    const gather = (node, depth = 0) => {
       if (node === null || node === undefined || node === false) return;
-      if (Array.isArray(node)) return node.forEach(gather);
+      if (Array.isArray(node)) return node.forEach((child) => gather(child, depth));
       if (typeof node !== "object") {
         const value = String(node).trim();
         if (value !== "") texts.push(value);
         return;
       }
-      if (typeof node.type === "function") return;
-      (node.children ?? []).forEach(gather);
+      /* `Row` and `Button` are components: their labels and values only exist
+         after the call, which is also how the real renderer reaches them. */
+      if (typeof node.type === "function" && depth < 8) {
+        return gather(node.type({ ...(node.props ?? {}), children: node.children ?? [] }), depth + 1);
+      }
+      (node.children ?? []).forEach((child) => gather(child, depth));
     };
     gather(settled.tree);
     console.log(`  after check: ${texts.slice(0, 18).join(" · ")}`);
     const card = texts.some((line) => line.indexOf("a.png") >= 0) && texts.some((line) => line.indexOf("b.mp4") >= 0);
     const badge = texts.some((line) => line === "草稿" || line === "draft");
+    /* The landing folder comes from the reply, so a page that guessed it from
+       config would show the shared folder here instead. */
+    const landed = texts.some((line) => line.indexOf(".xyq\\4a1b2c3d") >= 0 || line.indexOf(".xyq/4a1b2c3d") >= 0);
     if (!card) {
       failures += 1;
       console.log("  !! the result card did not list the downloaded files");
@@ -382,6 +391,10 @@ if (settingsEntry === undefined) {
     if (!badge) {
       failures += 1;
       console.log("  !! the draft video has no badge");
+    }
+    if (!landed) {
+      failures += 1;
+      console.log("  !! the result card did not show the run's own folder");
     }
   }
 }

@@ -64,6 +64,25 @@ Generation returns a thread id, a run id, and a web link — the media follows
 later, which is what `xyq_result` is for. Pass either id: the other one is
 recovered from the run journal.
 
+## Where the media lands
+
+A run submitted from a conversation stores its media **in that session's
+workspace**, one folder per run:
+
+```
+<workspace>/.xyq/<first 8 chars of the run id>/
+```
+
+The folder is recorded when the run is submitted, so a later poll lands in the
+same place whichever caller asks — the panel button, `xyq_result`, or another
+session. `downloadDir` is therefore no longer the landing folder for everything;
+it only receives runs that have no workspace, such as ones submitted before this
+change. The `dir` argument of `xyq_result` overrides the location for one call
+and is not written back to the run.
+
+Every run row carries an "open folder" button, and the result card shows the
+folder for that particular poll.
+
 ## Layout
 
 ```
@@ -82,7 +101,8 @@ dsh-xyq/
 
 `cliPath`, `cwd`, `downloadDir`, `teamId`, `stateTtlMs` — documented in
 [detail/DETAIL.md](detail/DETAIL.md). They are set on the plugin row, so a
-change needs no rebuild.
+change needs no rebuild. `downloadDir` is only where runs without a workspace
+(including older ones) land.
 
 ## Notes
 

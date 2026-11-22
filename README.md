@@ -60,6 +60,21 @@ dsh plugin --profile web add /绝对路径/dsh-xyq
 生成返回 thread id、run id 和网页链接——素材随后才到，`xyq_result` 就是用来取它的。
 两个 id 给一个就够，另一个从任务日志里补。
 
+## 产物落在哪
+
+在对话里提交的任务，素材落在**那个会话的工作区**里，一个任务一个文件夹：
+
+```
+<工作区>/.xyq/<run id 前 8 位>/
+```
+
+目录在提交时就写进任务日志，所以之后从哪一端查询（面板按钮、`xyq_result`、另一
+个会话）都落回同一个位置。`downloadDir` 不再是所有任务的公共落点，它只接没有工
+作区的任务——比如早于这次改动提交的老任务。`xyq_result` 的 `dir` 参数可以临时改
+一次落点，不会写回任务。
+
+面板里每条任务旁都有「打开文件夹」，结果卡片也会显示这一次的目录。
+
 ## 结构
 
 ```
@@ -78,6 +93,7 @@ dsh-xyq/
 
 `cliPath`、`cwd`、`downloadDir`、`teamId`、`stateTtlMs`——说明见
 [detail/DETAIL.zh.md](detail/DETAIL.zh.md)。它们写在插件行上，改动不用重新构建。
+`downloadDir` 只是没有工作区的任务（以及老任务）的落点。
 
 ## 说明
 

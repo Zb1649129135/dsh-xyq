@@ -157,6 +157,48 @@ check(
 const blankFile = await call(ACTION_ROUTE, withBody(request("POST", ACTION_ROUTE), { action: "open-file", payload: {} }));
 check("open-file refuses a missing path", blankFile.json()?.ok === false, blankFile.json()?.error ?? "");
 
+/* The folder button takes a folder from the page, so it is a whitelist too. */
+const strayFolder = await call(
+  ACTION_ROUTE,
+  withBody(request("POST", ACTION_ROUTE), { action: "open-download-dir", payload: { dir: "/etc" } }),
+);
+check(
+  "open-download-dir refuses a folder this plugin never writes to",
+  strayFolder.json()?.ok === false && strayFolder.json()?.opened === false,
+  strayFolder.json()?.error ?? "",
+);
+
+/* ---------------------------------------------------------------- *
+ * where a run's media lands
+ * ---------------------------------------------------------------- */
+
+console.log("landing folders");
+const store = await import("../lib/store.js");
+const id = store.shortRunId("skill_1a2b3c4d-5e6f-7890-abcd-ef0123456789", "");
+check("a run id becomes a folder name", id === "1a2b3c4d", id);
+check(
+  "the task folder sits under the workspace",
+  store.taskDirectory("D:/work", "abc").replace(/\\/g, "/").endsWith("/work/.xyq/abc"),
+  store.taskDirectory("D:/work", "abc"),
+);
+const fallback = store.resolveDownloadDir("");
+check(
+  "an explicit dir wins",
+  store.resolveRunDir({ dir: "D:/picked", recorded: "D:/recorded", workspace: "D:/ws", runId: "abc", fallback }) === store.resolveRunDir({ dir: "D:/picked", fallback }),
+  store.resolveRunDir({ dir: "D:/picked", recorded: "D:/recorded", workspace: "D:/ws", runId: "abc", fallback }),
+);
+check(
+  "a recorded dir survives a later call from another session",
+  store.resolveRunDir({ recorded: "D:/recorded", workspace: "D:/other", runId: "abc", fallback }) === store.resolveRunDir({ recorded: "D:/recorded", fallback }),
+  store.resolveRunDir({ recorded: "D:/recorded", workspace: "D:/other", runId: "abc", fallback }),
+);
+check(
+  "a fresh run lands in its workspace",
+  store.resolveRunDir({ workspace: "D:/ws", runId: "abcdef", fallback }) === store.taskDirectory("D:/ws", "abcdef"),
+  store.resolveRunDir({ workspace: "D:/ws", runId: "abcdef", fallback }),
+);
+check("without a workspace the shared folder is the fallback", store.resolveRunDir({ runId: "abcdef", fallback }) === fallback);
+
 /* ---------------------------------------------------------------- *
  * a tool call end to end
  * ---------------------------------------------------------------- */

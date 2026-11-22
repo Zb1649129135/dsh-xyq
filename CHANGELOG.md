@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.0 — 2026-11-22
+
+Media now lands beside the work that produced it, instead of in one shared folder.
+
+- A run submitted from a conversation downloads into
+  `<workspace>/.xyq/<first 8 chars of the run id>/`. The folder is decided when
+  the run is submitted and written into the run journal, because the two callers
+  know different things: a tool has `exec.agent` and can read the session's
+  workspace (from `workingDirectory`, falling back to `session.header.cwd`),
+  while the panel button goes over HTTP and has no agent. Recording it on the run
+  is what makes a later poll land in the right place from either side.
+- `downloadDir` becomes a fallback rather than the landing folder: it only
+  receives runs with no workspace, plus runs submitted before this change.
+  Journal entries gained `workspace` and `dir`; old entries default to empty and
+  are never migrated.
+- `xyq_result` takes an optional `dir` to override the folder for one call
+  without writing it back.
+- The folder buttons take a folder: every run row has "open folder", and the
+  result card shows the folder for that particular poll. `open-download-dir`
+  accepts a `dir` and is whitelisted against the folders this plugin itself
+  writes to; `open-file` is whitelisted the same way, since either action is
+  reachable from the page.
+- `snapshot().config` gained `taskDirRule`, and the page explains the rule under
+  the shared folder row.
+
 ## 0.2.0 — 2026-11-20
 
 Ready for npm, so the plugin installs by name instead of by absolute path.
